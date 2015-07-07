@@ -3,18 +3,18 @@
 ### VagrantでVM(Cent0S 7)を作る
 - 作業するディレクトリへ移動
 - 設定ファイル「Vagrantfile」の作成
-- `vagrant init hfm4/centos7` でCentOS 7用のVagrantfileが作成される
+  - `vagrant init hfm4/centos7` でCentOS 7用のVagrantfileが作成される
 - 仮想マシンの作成と起動
-- `vagrant up`
+  - `vagrant up`
 - 仮想マシンにログイン
-- `vagrant ssh`
+  - `vagrant ssh`
 
 ### MySQLへ移行
 - mysqlをインストール
-- `brew install mysql`
+  - `brew install mysql`
 - mysqlにrootでログインする
-- `mysql -u root -p`
-- passwordは何も入力しないでok
+  - `mysql -u root -p`
+  - passwordは何も入力しないでok
 - 環境ごとにmysqlにDBを作成(development/test/production)
 
 ```
@@ -23,9 +23,9 @@ mysql> CREATE DATABASE db_test DEFAULT CHARACTER SET utf8;
 mysql> CREATE DATABASE db_production DEFAULT CHARACTER SET utf8;
 ```
 
-- `usr/local/var/mysql`にmysqlのDBが作成される
-- `show variables like 'datadir'`で`datadir`(DBの保存先)を確認できる
-- sqlit3ではRails_Appの`db/`に作成されていた(railsが直接見に行く仕様のため)
+  - `usr/local/var/mysql`にmysqlのDBが作成される
+    - `show variables like 'datadir'`で`datadir`(DBの保存先)を確認できる
+  - sqlit3ではRails_Appの`db/`に作成されていた(railsが直接見に行く仕様のため)
 - 環境ごとにmysqlにユーザを作成
 
 ```
@@ -74,16 +74,16 @@ gem 'mysql2'
 そして`adapter:`を書き換え、socketのファイルパスを`mysql_config --socket`で調べて`socket:` を書き換える。
 
 - DBのマイグレーションをする
-- `bundle exec rake db:migrate`
+  - `bundle exec rake db:migrate`
 - DBをシードする
-- `bundle exec rake db:seed`
+  - `bundle exec rake db:seed`
 - サーバを立ち上げて動作確認
-- `bundle exec rails s -b 0.0.0.0`
+  - `bundle exec rails s -b 0.0.0.0`
 - テストは落ちてしまうので、userとmicropostのymlの日付に`.to_s(:db)`をつける
 
 ## VMにRuby2.2をインストールする
 - `wget`を使えるようにする
-- `yum install wget`
+  - `yum install wget`
 - インストール先のディレクトリへ移動
 
 ```
