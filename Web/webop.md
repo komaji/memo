@@ -14,7 +14,7 @@
   - `brew install mysql`
 - mysqlにrootでログインする
   - `mysql -u root -p`
-  - passwordは何も入力しないでok
+  - passwordは何も入力しないでok <- ほんと? (DBにpassword無いのはマズいんじゃないかな)
 - 環境ごとにmysqlにDBを作成(development/test/production)
 
 ```
