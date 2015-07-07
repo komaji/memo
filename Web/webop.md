@@ -15,7 +15,7 @@
 - mysqlにrootでログインする
   - `mysql -u root -p`
   - passwordは何も入力しないでok <- ほんと? (DBにpassword無いのはマズいんじゃないかな)
-- 環境ごとにmysqlにDBを作成(development/test/production)
+- 環境ごとにmysqlにDBを作成(development/test/production) <- 手元で試すときはdevelopment/testだけで十分じゃないかな
 
 ```
 mysql> CREATE DATABASE db_development DEFAULT CHARACTER SET utf8;
