@@ -66,7 +66,7 @@ production:
   password: pass_production
 ```
 
-mysqlでは`usr/local/var/mysql`に作成されているデータにadapterがsocketを通してアクセスする。
+mysqlでは`/usr/local/var/mysql`に作成されているデータにadapterがsocketを通してアクセスする。
 そのため、mysql2のadapterをインストールするために`Gemfile`を以下のように書き換えて`bundle install`する。
 
 ```
@@ -98,7 +98,44 @@ yum -y install gcc
 make
 make install
 ```
-`ruby -v`を実行して`ruby 2.2.2p95 (2015-04-13 revision 50295) [x86_64-linux]`が表示されればok。
+`ruby -v`を実行して`ruby 2.2.2p95 (2015-04-13 revision 50295) [x86_64-linux]`が表示されればok。  
+configureスクリプトによりソフトウェアをビルドする場合、`./configure --prefix=ディレクトリ`とすることでインストール先のディレクトリを指定できる
+
+## VagrantにRails環境を用意する
+
+- 不足しているものをインストールする
+```
+yum install zlib-devel 
+yum install opennssl-devel
+cd /opt/ruby-2.2.2/
+./configure
+make
+make install
+```
+
+ここで`gem install rails`するとnokogiri周りでエラーが起きるので、以下を行う。
+
+```
+yum -y install libxml2 libxslt libxml2-devel libxslt-devel
+gem install nokogiri -- --use-system-libraries
+```
+- Railsをインストール
+  - `gem install rails`
+
+## Vagrantでsample_appを動かす
+
+- githubからsample_appをインストールするためgitをインストールする
+  - `yum install git`
+- sample_appをcloneする
+  - `git clone https://github.com/komaji/sample_app.git`
+- mariadbを使えるようにする
+  - `yum install mariadb-server mariadb-devel`
+
 
 ## その他
 - `brew`では`/usr/local/Cellar`にインストールされる
+- `brew --cellar mysql`で`datadir/local/Cellar/mysql` とかが取得できる
+  - `ls -l $(brew --cellar mysql)`でmysqlの中が見られる
+- `Permission denied @ rb_sysopen - mkmf.log (Errno::EACCES)`が起きた場合
+  - mkmf.logの所有者が実行したファイルと異なっている場合があるので、`ls -l`で所有者を確認し、異なる場合は`chown`コマンドで変更する必要がある。
+
