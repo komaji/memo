@@ -14,8 +14,8 @@
   - `brew install mysql`
 - mysqlにrootでログインする
   - `mysql -u root -p`
-  - passwordは何も入力しないでok
-- 環境ごとにmysqlにDBを作成(development/test/production)
+  - passwordは何も入力しないでok <- ほんと? (DBにpassword無いのはマズいんじゃないかな)
+- 環境ごとにmysqlにDBを作成(development/test/production) <- 手元で試すときはdevelopment/testだけで十分じゃないかな
 
 ```
 mysql> CREATE DATABASE db_development DEFAULT CHARACTER SET utf8;
@@ -23,7 +23,7 @@ mysql> CREATE DATABASE db_test DEFAULT CHARACTER SET utf8;
 mysql> CREATE DATABASE db_production DEFAULT CHARACTER SET utf8;
 ```
 
-  - `usr/local/var/mysql`にmysqlのDBが作成される
+  - `/usr/local/var/mysql`にmysqlのDBが作成される
     - `show variables like 'datadir'`で`datadir`(DBの保存先)を確認できる
   - sqlit3ではRails_Appの`db/`に作成されていた(railsが直接見に行く仕様のため)
 - 環境ごとにmysqlにユーザを作成
