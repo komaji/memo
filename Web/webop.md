@@ -84,7 +84,7 @@ gem 'mysql2'
   - `bundle exec rails s -b 0.0.0.0`
 - テストは落ちてしまうので、userとmicropostのymlの日付に`.to_s(:db)`をつける
 
-## VMにRuby2.2をインストールする
+### VMにRuby2.2をインストールする
 - `wget`を使えるようにする
   - `yum install wget`
 - インストール先のディレクトリへ移動
@@ -101,7 +101,7 @@ make install
 `ruby -v`を実行して`ruby 2.2.2p95 (2015-04-13 revision 50295) [x86_64-linux]`が表示されればok。  
 configureスクリプトによりソフトウェアをビルドする場合、`./configure --prefix=ディレクトリ`とすることでインストール先のディレクトリを指定できる
 
-## VagrantにRails環境を用意する
+### VagrantにRails環境を用意する
 
 - 不足しているものをインストールする
 ```
@@ -122,7 +122,7 @@ gem install nokogiri -- --use-system-libraries
 - Railsをインストール
   - `gem install rails`
 
-## Vagrantでsample_appを動かす
+### Vagrantでsample_appを動かす
 
 - githubからsample_appをインストールするためgitをインストールする
   - `yum install git`
