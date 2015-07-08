@@ -12,10 +12,13 @@
 ### MySQLへ移行
 - mysqlをインストール
   - `brew install mysql`
+- mysqlのrootのパスワードを設定する
+  - `mysql> SET PASSWORD FOR root@localhost=PASSWORD('hoge'); `
 - mysqlにrootでログインする
   - `mysql -u root -p`
-  - passwordは何も入力しないでok <- ほんと? (DBにpassword無いのはマズいんじゃないかな)
-- 環境ごとにmysqlにDBを作成(development/test/production) <- 手元で試すときはdevelopment/testだけで十分じゃないかな
+  - passwordは設定したもの
+- 環境ごとにmysqlにDBを作成(development/test)
+  - 手元で確認するだけなので、productionは不要
 
 ```
 mysql> CREATE DATABASE db_development DEFAULT CHARACTER SET utf8;
