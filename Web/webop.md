@@ -207,8 +207,8 @@ baseurl=http://nginx.org/packages/centos/7/$basearch/
 gpgcheck=0
 enabled=1
 ```
-- `service nginx start`を実行し、`http://localhost:8080/`にアクセスしてWelcome to nginx!と表示されればok。
-- `service nginx stop`で停止
+- `systemctl start nginx.service`を実行し、`http://localhost:8080/`にアクセスしてWelcome to nginx!と表示されればok。
+- `systemctl stop nginx.service`で停止
 
 ### Unicornの設定
 - gemfileを以下のように書き換えて`bundle install`する  
@@ -243,6 +243,95 @@ after_fork do |server, worker|
 end
 ```
 
+- プロダクション環境においても画像の保存先をローカルに変更するために`app/uploaders/picture_uploader.rb`を以下のように修正する。  
+```
+# if Rails.env.production?
+#   storage :fog
+# else
+#   storage :file
+# end
+  storage :file
+```
+- cookieに保存されるsessionが書き換えられないように、`config/secret.yml`からproduction環境のSECRET_KEY_BASEを設定する。このとき、ファイルに直接書くとセキュアでないので環境変数を用いて設定する。
+```
+SECRET_KEY_BASE=$(rake secret)
+export SECRET_KEY_BASE
+```
+  - `rake secret`でランダムな文字列を生成する。
+  - `$()`で実行結果を渡すことができる。
+- `env`で環境変数が正しく設定されているかを確認できる
+- unicornを起動して確認する  
+  - `bundle exec unicorn -c config/unicorn.rb -E production`
+  - `curl localhost:8080 -v`  
+これは失敗する。httpsにリダイレクトされていることがわかる。現在`config/environments/production.rb`において`config.force_ssl = false`とすることで、httpsでのみアクセスできるようにしていることが原因。そのため、`config/environments/production.rb`において`config.force_ssl = false`とすることで`curl localhost:8080 -v`が成功することを確認できる。
+(unicornはhttpsのアクセスを扱えないので、これからnginxとunicornを繋いで、httpsのアクセスに対してnginxがsslを解除してhttpとしてunicornに渡すようにする。)
+
+### nginxとunicornを繋ぐ
+- `/etc/nginx/conf.d/sample_app.conf`を作成する。中身は以下とする。もともとある`.conf`ファイルは削除する。
+```
+upstream unicorn_server {
+  # This is the socket we configured in unicorn.rb
+  server unix:/srv/webapp/sample_app/tmp/sockets/unicorn.sock
+  fail_timeout=0;
+}
+
+server {
+  listen 80;
+  client_max_body_size 4G;
+  server_name _;
+
+  keepalive_timeout 5;
+
+  root /srv/webapp/sample_app/public;
+
+  Location / {
+    # proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    # proxy_set_header Host $http_host;
+    # proxy_redirect off;
+
+    # If you don't find the filename in the static files
+    # Then request it from the unicorn server
+    if (!-f $request_filename) {
+       proxy_pass http://unicorn_server;
+       break;
+    }
+  }
+}
+```
+
+- `server unix:/srv/webapp/sample_app/tmp/sockets/unicorn.sock`では、unicornとの繋ぐためのUNIXドメインソケットのパスを指定する。場所はどこでも良いが、nginxの設定によっては`/temp`だと見えなくなることがある。これによりファイル内でupstream_serverはunicorn.sockのことを示すようになる。upstream_serverとはnginxの裏側、すなわちunicornのこと。
+- `listen 80`で80番ポートを開く
+- nginxとunicornにおいて、静的ファイルはunicorn側で扱う必要がないので、nginx側で持っておくようにする。その静的ファイルのパスを指定しているのが`root /srv/webapp/sample_app/public`
+- `proxy_set_header Host $http_host`ではniginxにアクセスされた時のヘッダーをunicornに渡す時に、`$http_host`という形で変換するということ。
+
+```
+if (!-f $request_filename) {
+  proxy_pass http://unicorn_server;
+  break;
+}
+```
+は、nginxへのアクセスをunicornに渡すという設定。
+
+- `sample_app/config/unicorn.rb`のに`listen "/srv/webapp/sample_app/tmp/sockets/unicorn.sock"`を追加する。これはnginxの設定`unicorn.sock`と同じパスにする。
+- 両方起動して`curl localhost:80`でhttpsにリダイレクトされればok。
+
+### httpsでの接続(とりあえずメモ)
+- [自己署名証明書を発行する。](https://supportforums.cisco.com/ja/document/137596)
+  - [PKIとは](http://www.atmarkit.co.jp/fsecurity/special/02fivemin/fivemin00.html)
+```
+mkdir /etc/nginx/ssl
+cd /etc/nginx/ssl
+openssl genrsa -des3 -out example.key 2048
+openssl req -new -key example.key -out example.csr
+openssl genrsa -des3 -out CA.key 2048
+openssl req -new -x509 -key CA.key -out CA.cer -days 365
+openssl x509 -req -in example.csr -CA CA.cer -CAkey CA.key -set_serial 01 -out example.cer
+```
+- nginx.confの設定を変える
+- Vagrantfileにhttps用のfowarded_portを加える
+- curl https://localhost --cacert CA.cer
+- production用のdbを用意する
+
 ## その他
 - stdin
   - コンソールからの入力
@@ -250,3 +339,5 @@ end
   - コンソールへの出力  
 - stderr
   - コンソールへのエラーログ出力  
+- `ps aux | grep プロセス名`で起動中のプロセスを確認できる
+- `kill プロセス番号`でプロセスを停止できる
