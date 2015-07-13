@@ -260,7 +260,7 @@ export SECRET_KEY_BASE
   - `rake secret`でランダムな文字列を生成する。
   - `$()`で実行結果を渡すことができる。
 - `env`で環境変数が正しく設定されているかを確認できる
-- unicornを起動して確認する  
+- unicornを起動して接続できるか確認する
   - `bundle exec unicorn -c config/unicorn.rb -E production`
   - `curl localhost:8080 -v`  
 これは失敗する。httpsにリダイレクトされていることがわかる。現在`config/environments/production.rb`において`config.force_ssl = false`とすることで、httpsでのみアクセスできるようにしていることが原因。そのため、`config/environments/production.rb`において`config.force_ssl = false`とすることで`curl localhost:8080 -v`が成功することを確認できる。
@@ -326,11 +326,52 @@ openssl req -new -key example.key -out example.csr
 openssl genrsa -des3 -out CA.key 2048
 openssl req -new -x509 -key CA.key -out CA.cer -days 365
 openssl x509 -req -in example.csr -CA CA.cer -CAkey CA.key -set_serial 01 -out example.cer
+openssl rsa -in example.key -out example.key
 ```
-- nginx.confの設定を変える
+- nginx.confの`server`の設定を以下にする。
+```
+server {
+  listen 443 ssl;
+  ssl_certificate      /etc/nginx/ssl/nginx.cer;
+  ssl_certificate_key  /etc/nginx/ssl/nginx.key;
+
+  listen 80;
+  client_max_body_size 4G;
+  server_name _;
+
+  keepalive_timeout 5;
+
+  root /srv/webapp/sample_app/public;
+
+  location / {
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header Host $http_host;
+    proxy_redirect off;
+
+    # If you don't find the filename in the static files
+    # Then request it from the unicorn server
+    if (!-f $request_filename) {
+      proxy_pass http://unicorn_server;
+      break;
+    }
+  }
+}
+```
+
+- `listen 443 ssl`はhttps用のポートを開く設定
+- `ssl_certificate      /etc/nginx/ssl/nginx.cer;`は認証ファイルの設定
+- `ssl_certificate_key  /etc/nginx/ssl/nginx.key;`は鍵ファイルの設定
+- `proxy_set_header X-Forwarded-Proto https;`はnginxからunicornにアクセスを渡す際に、httpsとして渡す(実際は、nginxが暗号化を解除しているためhttpになっている)。
+
+
 - Vagrantfileにhttps用のfowarded_portを加える
+  - 1000番以下のポートは使用制限があるため、それ以上のポートをfowarded_portに設定する
 - curl https://localhost --cacert CA.cer
+  - `--cacert`により自己証明書を利用可能にする  
 - production用のdbを用意する
+  - 現段階ではproduction用のdbが設定されていない
+  - `RAILS_ENV=production`をつける
 
 ## その他
 - stdin
